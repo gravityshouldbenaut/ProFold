@@ -6,7 +6,8 @@ from ast import literal_eval
 def find_precision(theoretical, experimental):
 	return abs((theoretical-experimental)/experimental)
 
-def find_optimal_basis_sets(smile, precisionInPercent, homoLumoConvergance):
+#finds the right basis set based on element summation of literature ground state values, and then 
+def find_optimal_basis_sets(smile, name, precisionInPercent, homoLumoConvergance):
 	bestBasisSets = []
 	bestHomoLumo = []
 	precisionDecimal = precisionInPercent / 100
@@ -54,11 +55,13 @@ def find_optimal_basis_sets(smile, precisionInPercent, homoLumoConvergance):
 			bestHomoLumo.append("6-31G + B3LYP")
 		if augccpDZb3lypHomoLumoSum == minConvergance:
 			bestHomoLumo.append("aug-cc-pVDZ + B3LYP")
+	fileToSave = name + ".xyz"
+	Chem.MolToXYZFile(mol, fileToSave)
 	outputJSON = {"Best Basis Sets Based on Ground State Precision": bestBasisSets, "Best Basis Sets Based on HOMO-LUMO Gap Convergance": bestHomoLumo}
 	return outputJSON
 
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
-		print("Syntax: python basissetselector.py [.pdb file name location or smiles string] [percetage of precision wihtout %] [homoLumoConvergance if you want check for the HOMO-LUMO convergance and homoLumoConvergance=Off if you do not]")
+		print("Syntax: python basissetselector.py [.pdb file name location or smiles string] [name of molecule] [percetage of precision wihtout %] [homoLumoConvergance if you want check for the HOMO-LUMO convergance and homoLumoConvergance=Off if you do not]")
 	else:
-		print(find_optimal_basis_sets(sys.argv[1], literal_eval(sys.argv[2]), sys.argv[3]))
+		print(find_optimal_basis_sets(sys.argv[1], sys.argv[2], literal_eval(sys.argv[3]), sys.argv[4]))
