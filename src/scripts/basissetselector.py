@@ -2,10 +2,12 @@ import pandas as pd
 from rdkit.Chem import AllChem as Chem
 import sys
 from ast import literal_eval
+from subprocess import call 
 
 def find_precision(theoretical, experimental):
 	return abs((theoretical-experimental)/experimental)
 
+#obabel needs to be installed on the computer that is running this
 #finds the right basis set based on element summation of literature ground state values, and then 
 def find_optimal_basis_sets(smile, name, precisionInPercent, homoLumoConvergance):
 	bestBasisSets = []
@@ -23,16 +25,16 @@ def find_optimal_basis_sets(smile, name, precisionInPercent, homoLumoConvergance
 	sixthreeoneb3lypsum = 0
 	for atom in arrayOfAtomsInSmile:
 		groundStateSum += groundStateDF["Experimental Ground State Energy from AE17 UMN (Hartree)"][atom]	
-		ccpVTZb3lypSum += groundStateDF["cc-pVTZ + B3LYP"][atom]
-		sixthreeoneb3lypsum += groundStateDF["6-31G + B3LYP"][atom]
-		augccpDZb3lypSum += groundStateDF["aug-cc-pVDZ + B3LYP"][atom]
+		ccpVTZb3lypSum += groundStateDF["cc-pVTZ"][atom]
+		sixthreeoneb3lypsum += groundStateDF["6-31G"][atom]
+		augccpDZb3lypSum += groundStateDF["aug-cc-pVDZ"][atom]
 
 	if(find_precision(ccpVTZb3lypSum,groundStateSum) <= precisionDecimal):
-		bestBasisSets.append("cc-pVTZ + B3LYP")
+		bestBasisSets.append("cc-pVTZ")
 	if(find_precision(sixthreeoneb3lypsum,groundStateSum) <= precisionDecimal):
-		bestBasisSets.append("6-31G + B3LYP")
+		bestBasisSets.append("6-31G")
 	if(find_precision(augccpDZb3lypSum,groundStateSum) <= precisionDecimal):
-		bestBasisSets.append("aug-cc-pVDZ + B3LYP")
+		bestBasisSets.append("aug-cc-pVDZ")
 	if((find_precision(ccpVTZb3lypSum,groundStateSum) > precisionDecimal) and (find_precision(sixthreeoneb3lypsum,groundStateSum) > precisionDecimal) and (find_precision(augccpDZb3lypSum,groundStateSum) > precisionDecimal)):
 		bestBasisSets.append("cc-pVTZ + B3LYP,6-31G + B3LYP, and aug-cc-pVDZ + B3LYP are too imprecise. Please try another basis set")
 
@@ -55,8 +57,8 @@ def find_optimal_basis_sets(smile, name, precisionInPercent, homoLumoConvergance
 			bestHomoLumo.append("6-31G + B3LYP")
 		if augccpDZb3lypHomoLumoSum == minConvergance:
 			bestHomoLumo.append("aug-cc-pVDZ + B3LYP")
-	fileToSave = name + ".xyz"
-	Chem.MolToXYZFile(mol, fileToSave)
+	fileName = name + ".xyz"
+	call("obabel " + smile + " -O " + fileName, shell=True)
 	outputJSON = {"Best Basis Sets Based on Ground State Precision": bestBasisSets, "Best Basis Sets Based on HOMO-LUMO Gap Convergance": bestHomoLumo}
 	return outputJSON
 
